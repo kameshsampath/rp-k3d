@@ -6,5 +6,30 @@ metadata:
 spec:
   chartRef: {}
   clusterSpec:
+    console:
+      service:
+        type: NodePort
+        port: 8080
+        nodePort: 30080
+      # https://docs.redpanda.com/docs/reference/console/config/
+      console:
+        config:
+          kafka:
+            brokers: ["redpanda:9093"]
+            schemaRegistry:
+              enabled: true
+              urls: ["http://redpanda:8081"]
+            protobuf:
+              enabled: true
+              schemaRegistry:
+                enabled: true
+                refreshInterval: 5m
+          redpanda:
+            adminApi:
+              enabled: true
+              urls: ["http://redpanda:9644"]
+    # since its dev local cluster can disable TLS
+    tls:
+      enabled: false
     statefulset:
       replicas: 1

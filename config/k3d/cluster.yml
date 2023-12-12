@@ -5,9 +5,24 @@ metadata:
 servers: ${NUM_SERVERS}
 agents: ${NUM_WORKERS}
 image: docker.io/rancher/k3s:${K3S_VERSION}
-# TODO - do it after find the required ports to be exposed
-# ports:
-#   - port:
+# Allowing the NodePorts to be accessible via localhost
+ports:
+  # Console
+  - port: 30080:30080
+    nodeFilters:
+      - loadbalancer
+  # Kafka
+  - port: 31092:31092
+    nodeFilters:
+      - loadbalancer
+  # PandaProxy
+  - port: 30082:30082
+    nodeFilters:
+      - loadbalancer
+  # Schema Registry
+  - port: 30081:30081
+    nodeFilters:
+      - loadbalancer
 volumes:
   # All manifests in features folder need to be mapped to manifest folder
   # in side the k3s cluster server node
