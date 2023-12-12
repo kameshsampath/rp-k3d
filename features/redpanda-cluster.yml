@@ -6,6 +6,19 @@ metadata:
 spec:
   chartRef: {}
   clusterSpec:
+    # External Service Access Settings
+    external:
+      # makes the domain of redpana nodes to be advertised with
+      # .localhost as domain name e.g. redpanda-0.localhost
+      domain: localhost
+      externalDns:
+        enabled: true
+    # since its dev local cluster can disable TLS
+    tls:
+      enabled: false
+    statefulset:
+      replicas: 1
+    # Redpanda Console settings
     console:
       service:
         type: NodePort
@@ -28,8 +41,3 @@ spec:
             adminApi:
               enabled: true
               urls: ["http://redpanda:9644"]
-    # since its dev local cluster can disable TLS
-    tls:
-      enabled: false
-    statefulset:
-      replicas: 1
