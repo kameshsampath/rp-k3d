@@ -1,0 +1,32 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: ${CLUSTER_NAME}
+servers: ${NUM_SERVERS}
+agents: ${NUM_WORKERS}
+image: docker.io/rancher/k3s:${K3S_VERSION}
+# TODO - do it after find the required ports to be exposed
+# ports:
+#   - port:
+volumes:
+  # All manifests in features folder need to be mapped to manifest folder
+  # in side the k3s cluster server node
+  # Deploy Jetstack
+  - volume: $FEATURES_DIR/jetstack.yml:/var/lib/rancher/k3s/server/manifests/jetstack.yaml
+    nodeFilters:
+      - server:*
+  # Deploy Redpanda CRD
+  - volume: $FEATURES_DIR/redpanda-crd.yml:/var/lib/rancher/k3s/server/manifests/redpanda-crd.yml
+    nodeFilters:
+      - server:*
+  # Deploy Redpanda
+  - volume: $FEATURES_DIR/redpanda.yml:/var/lib/rancher/k3s/server/manifests/redpanda.yaml
+    nodeFilters:
+      - server:*
+  # Deploy Redpanda Cluster
+  - volume: $FEATURES_DIR/redpanda-cluster.yml:/var/lib/rancher/k3s/server/manifests/redpanda-cluster.yaml
+    nodeFilters:
+      - server:*
+registries:
+  use:
+    - "${CLUSTER_NAME}-registry.localhost"

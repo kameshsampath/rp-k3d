@@ -1,0 +1,13 @@
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: redpanda-operator
+  namespace: kube-system
+spec:
+  repo: https://charts.redpanda.com
+  chart: operator
+  createNamespace: true
+  targetNamespace: redpanda
+  valuesContent: |-
+    image.repository: docker.redpanda.com/redpandadata/redpanda-operator
