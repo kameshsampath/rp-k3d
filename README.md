@@ -1,6 +1,6 @@
 # Setup Redpanda on k3s
 
-Scripts to setup the [Redpanda](https://redpanda.com) dev cluster on a developer laptop using [k3d](https:/k3d.io)
+Scripts to setup the [Redpanda](https://redpanda.com) dev cluster on a developer laptop using [k3d](https:/k3d.io).
 
 ## Required Tools
 
@@ -72,11 +72,21 @@ And the console is accessible using the url <http://localhost:30080/>
 
 ## Test the Setup
 
-Inspect the cluster status
+### rpk Profile
+
+`rpk` profile is convinent way to switch Redpanda settings for different cluster environment. Let us setup one for `k3s` setup
 
 ```shell
-export RPK_BROKERS=localhost:31902
+rpk profile create k3s
 ```
+
+Now let use make the profile use the `brokers` using the exposed address `localhost:31092`
+
+```shell
+rpk profile set brokers localhost:31092
+```
+
+Now running the command to display the cluster status,
 
 ```shell
 rpk cluster status
@@ -87,12 +97,12 @@ Should show the an output like
 ```text
 CLUSTER
 =======
-redpanda.f7dca1bf-7a5d-413b-a570-b60569b1d309
+redpanda.58b01085-1072-4ea1-8225-78fcc18238a5
 
 BROKERS
 =======
-ID    HOST        PORT
-0*    redpanda-0  31092
+ID    HOST                  PORT
+0*    redpanda-0.localhost  31092
 
 TOPICS
 ======
@@ -100,7 +110,90 @@ NAME      PARTITIONS  REPLICAS
 _schemas  1           1
 ```
 
-## Destroy Cluster
+### List Topics
+
+```shell
+rpk topic list
+```
+
+Should show the following output,
+
+```shell
+NAME      PARTITIONS  REPLICAS
+_schemas  1           1
+```
+
+Let us try creating a new topic,
+
+```shell
+rpk topic create greetings
+```
+
+The command should fail with following error,
+
+```text
+unable to create topics [greetings]: unable to dial: dial tcp: lookup redpanda-0.localhost: no such host
+```
+
+### Resolving `.localhost` domains
+
+We don't have a resolver to route our requests to `redpanda-0.localhost`. There are many ways to do it and very simple of all is to add an entry to `/etc/hosts` file. But to make it more clean and neat, with ability to support other domain names than `.localhost` we will use [dnsmasq](https://dnsmasq.org).
+
+Run the following command to install `dnsmasq`
+
+```shell
+brew install dnsmasq
+```
+
+Configure the DNS server on `12.0.0.1` and make `.localhost` to be resolved using that DNS server,
+
+```shell
+echo 'address=/.localhost/127.0.0.1' >> "$(brew --prefix)/etc/dnsmasq.conf"
+echo 'listen-address=127.0.0.1' >> "$(brew --prefix)/etc/dnsmasq.conf"
+```
+
+Restart the `dnsmasq` service,
+
+```shell
+sudo brew services restart dnsmasq
+```
+
+Add a resolver to be used by dnsmaq to resolve `.localhost`,
+
+```shell
+sudo mkdir -pv /etc/resolver
+echo 'nameserver 127.0.0.1' | sudo tee -a /etc/resolver/localhost
+```
+
+Now when you try to ping the Redpanda broker address `redpanda-0.localhost` it should be reachable,
+
+```shell
+ping -c3 redpanda-0.localhost
+```
+
+Should output
+
+```text
+PING redpanda-0.localhost (127.0.0.1): 56 data bytes
+64 bytes from 127.0.0.1: icmp_seq=0 ttl=64 time=0.053 ms
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.092 ms
+64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.058 ms
+```
+
+Now we are all set to create new topics using the command,
+
+```shell
+rpk topic create greetings
+```
+
+Which should return,
+
+```shell
+TOPIC      STATUS
+greetings  OK
+```
+
+## Cleanup
 
 ```shell
 ./destroy.sh
